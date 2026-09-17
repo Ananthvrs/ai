@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI உதவியாளர்</title>
+    <style>
+        body { font-family: sans-serif; background-color: #121212; color: #e0e0e0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-container { width: 400px; background-color: #1e1e1e; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; flex-direction: column; height: 500px; }
+        .chat-box { flex: 1; overflow-y: auto; margin-bottom: 20px; padding-right: 10px; }
+        .message { margin-bottom: 15px; padding: 10px; border-radius: 8px; max-width: 80%; }
+        .user { background-color: #3f51b5; color: #ffffff; align-self: flex-end; margin-left: auto; }
+        .ai { background-color: #333333; color: #e0e0e0; align-self: flex-start; }
+        .input-area { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background-color: #2a2a2a; color: #fff; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; background-color: #3f51b5; color: white; cursor: pointer; }
+        button:hover { background-color: #303f9f; }
+        #mic-btn { background-color: #f44336; }
+        #mic-btn.listening { background-color: #4caf50; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-box" id="chat-box">
+        <div class="message ai">வணக்கம்! நான் உங்களுக்கு எப்படி உதவ முடியும்?</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="உங்கள் கேள்வியை இங்கே உள்ளிடவும்...">
+        <button id="mic-btn">🎙️</button>
+        <button onclick="sendMessage()">அனுப்பு</button>
+    </div>
+</div>
+
+<script>
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ta-IN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    const micBtn = document.getElementById('mic-btn');
+    const inputField = document.getElementById('user-input');
+
+    micBtn.addEventListener('click', () => {
+        if (micBtn.classList.contains('listening')) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    });
+
+    recognition.onstart = () => {
+        micBtn.classList.add('listening');
+        inputField.placeholder = "கேட்கிறேன்...";
+    };
+
+    recognition.onend = () => {
+        micBtn.classList.remove('listening');
+        inputField.placeholder = "உங்கள் கேள்வியை இங்கே உள்ளிடவும்...";
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        inputField.value = transcript;
+        sendMessage();
+    };
+
+    function sendMessage() {
+        const message = inputField.value.trim();
+        if (message === "") return;
+
+        displayMessage(message, "user");
+        inputField.value = "";
+
+        setTimeout(() => {
+            const response = "நீங்கள் கேட்டது: '" + message + "'. இது ஒரு மாதிரி பதில் இப்போது குரல் வசதியுடன்.";
+            displayMessage(response, "ai");
+            speak(response);
+        }, 500);
+    }
+
+    function displayMessage(text, sender) {
+        const chatBox = document.getElementById("chat-box");
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", sender);
+        messageDiv.innerText = text;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ta-IN';
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    document.getElementById("user-input").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>
